@@ -12,7 +12,9 @@ import matplotlib.pyplot as plt
 
 
 class TwitterClient():
-    
+    """
+       Class
+    """
     def __init__(self, twitter_user=None):
         self.auth = TwitterAuthenticator().authenticate_twitter_app()
         self.twitter_client = API(self.auth)
@@ -81,11 +83,11 @@ class TwitterListener(StreamListener):
         except BaseException as e:
             print("Error on_data: %s" % str(e))
 	
-	def on_error(self, status):
-            ## Return False when rate limit reached
-            if status == 420:
-                return False
-            print(status)
+    def on_error(self, status):
+         ## Return False when rate limit reached
+         if status == 420:
+             return False
+         print(status)
 		
 		
 class TweetAnalyzer():
@@ -122,18 +124,25 @@ class TweetAnalyzer():
 
 
     def tweets_to_data_frame(self, tweets):
+        """
+           Create data frame of tweets with selected fields
+           returns
+           emotive score is the absolute value of polarity
+           
+        """
         df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['tweets'])
-        
         df['id'] = np.array([tweet.id for tweet in tweets])
         df['len'] = np.array([len(tweet.text) for tweet in tweets])
         df['date'] = np.array([tweet.created_at for tweet in tweets])
         df['source'] = np.array([tweet.source for tweet in tweets])
         df['likes'] = np.array([tweet.favorite_count for tweet in tweets])
+        df['followers'] = np.array([tweet.user.followers_count for tweet in tweets])
         df['retweets'] = np.array([tweet.retweet_count for tweet in tweets])
         df['sentiment'] = np.array([self.analyze_sentiment(tweet) for tweet in df['tweets']])
+        df['emotive_score'] = np.array([abs(self.get_polarity_score(tweet)) for tweet in df['tweets']])
         df['polarity'] = np.array([self.get_polarity_score(tweet) for tweet in df['tweets']])
         df['subjectivity'] = np.array([self.get_subjectivity_score(tweet) for tweet in df['tweets']])
-        df['assessments'] = np.array([self.get_assessments(tweet) for tweet in df['tweets']])
+ ##       df['assessments'] = np.array([self.get_assessments(tweet) for tweet in df['tweets']])
         return df
 
 
@@ -144,15 +153,23 @@ if __name__ == '__main__':
 
 
 ###  Sentiment Analysis
+#    def save(tweets, filename='tweets.json',):
+#        f = open(filename, 'a')
+#        for tweet in tweets:
+#            f.write(tweet.text)
+#        f.close()
+
+    
+    
 
     def evaluateSentiment(twitter_user, sample_size):
         twitter_client = TwitterClient()
         tweet_analyzer = TweetAnalyzer()
         api = twitter_client.get_twitter_client_api()
         tweets = api.user_timeline(screen_name=twitter_user, count=sample_size)
+        print(len(tweets))
         df = tweet_analyzer.tweets_to_data_frame(tweets)
-        print(df['assessments'][0])
-        return (dict({'user': twitter_user, 'mean_polarity': np.mean(df['polarity']), 'mean_subjectivity': np.mean(df['subjectivity'])}))
+        return (dict({'user': twitter_user, 'mean_polarity': np.mean(df['polarity']), 'mean_subjectivity': np.mean(df['subjectivity']), 'mean_emotive_score' : np.mean(df['emotive_score']), 'mean_sentiment': np.mean(df['sentiment'])}))
     
     
 
