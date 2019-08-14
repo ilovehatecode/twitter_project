@@ -41,6 +41,12 @@ class TwitterClient():
         for tweet in Cursor(self.twitter_client.home_timeline, id=self.twitter_user).items(num_tweets):
                 home_timeline_tweets.append(tweet)
         return home_timeline_tweets
+
+    def get_user_timeline_tweets(self, num_tweets):
+        user_timeline_tweets = []
+        for tweet in Cursor(self.twitter_client.user_timeline, id=self.twitter_user).items(num_tweets):
+                user_timeline_tweets.append(tweet)
+        return user_timeline_tweets
         
 class TwitterAuthenticator():
 
@@ -112,13 +118,13 @@ class TweetAnalyzer():
         return analysis.sentiment_assessments
 
     def get_subjectivity_score(self, tweet):
-        return self.get_sentiment( tweet).subjectivity
+        return self.get_sentiment( self.clean_tweet(tweet)).subjectivity
 
     def get_polarity_score(self, tweet):
-        return self.get_sentiment( tweet).polarity
+        return self.get_sentiment( self.clean_tweet(tweet)).polarity
 
     def get_assessments(self, tweet):
-        return self.get_sentiment(tweet).assessments
+        return self.get_sentiment(self.clean_tweet(tweet)).assessments
 
 
 
@@ -142,6 +148,7 @@ class TweetAnalyzer():
         df['emotive_score'] = np.array([abs(self.get_polarity_score(tweet)) for tweet in df['tweets']])
         df['polarity'] = np.array([self.get_polarity_score(tweet) for tweet in df['tweets']])
         df['subjectivity'] = np.array([self.get_subjectivity_score(tweet) for tweet in df['tweets']])
+        df['likes_followers_ratio'] = np.array([ float(tweet.favorite_count) / tweet.user.followers_count for tweet in tweets])
  ##       df['assessments'] = np.array([self.get_assessments(tweet) for tweet in df['tweets']])
         return df
 
@@ -149,36 +156,7 @@ class TweetAnalyzer():
 
 
 
-if __name__ == '__main__':
 
-
-###  Sentiment Analysis
-#    def save(tweets, filename='tweets.json',):
-#        f = open(filename, 'a')
-#        for tweet in tweets:
-#            f.write(tweet.text)
-#        f.close()
-
-    
-    
-
-    def evaluateSentiment(twitter_user, sample_size):
-        twitter_client = TwitterClient()
-        tweet_analyzer = TweetAnalyzer()
-        api = twitter_client.get_twitter_client_api()
-        tweets = api.user_timeline(screen_name=twitter_user, count=sample_size)
-        print(len(tweets))
-        df = tweet_analyzer.tweets_to_data_frame(tweets)
-        return (dict({'user': twitter_user, 'mean_polarity': np.mean(df['polarity']), 'mean_subjectivity': np.mean(df['subjectivity']), 'mean_emotive_score' : np.mean(df['emotive_score']), 'mean_sentiment': np.mean(df['sentiment'])}))
-    
-    
-
-
-    sample_size = 400
-    print(evaluateSentiment('realDonaldTrump', sample_size))
-    print(evaluateSentiment('senSanders', sample_size))
-    print(evaluateSentiment('JoeBiden', sample_size))
-    print(evaluateSentiment('SpeakerRyan', sample_size))
 
 
 
